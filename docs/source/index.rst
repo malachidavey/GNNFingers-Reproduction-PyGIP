@@ -4,6 +4,38 @@
      <img src="_static/icon.png" alt="PyGIP Icon" style="width: 600px; height: auto;">
    </div>
 
+.. image:: https://img.shields.io/badge/PyGIP-v1.0.0-blue
+   :target: https://github.com/LabRAI/PyGIP
+   :alt: PyGIP
+
+.. image:: https://img.shields.io/github/actions/workflow/status/LabRAI/PyGIP/docs.yml
+   :target: https://github.com/LabRAI/PyGIP/actions
+   :alt: Build Status
+
+.. image:: https://img.shields.io/github/license/LabRAI/PyGIP.svg
+   :target: https://github.com/LabRAI/PyGIP/blob/main/LICENSE
+   :alt: License
+
+.. image:: https://img.shields.io/github/last-commit/LabRAI/PyGIP
+   :target: https://github.com/LabRAI/PyGIP
+   :alt: Last Commit
+
+.. image:: https://img.shields.io/github/issues/LabRAI/PyGIP
+   :target: https://github.com/LabRAI/PyGIP
+   :alt: Issues
+
+.. image:: https://img.shields.io/github/stars/LabRAI/PyGIP
+   :target: https://github.com/LabRAI/PyGIP
+   :alt: Stars
+
+.. image:: https://img.shields.io/github/forks/LabRAI/PyGIP
+   :target: https://github.com/LabRAI/PyGIP
+   :alt: GitHub forks
+
+.. image:: _static/github.svg
+   :target: https://github.com/LabRAI/PyGIP
+   :alt: GitHub
+
 ----
 
 **PyGIP** is a comprehensive Python library focused on model extraction attacks and defenses in Graph Neural Networks (GNNs). Built on PyTorch, PyTorch Geometric, and DGL, the library offers a robust framework for understanding, implementing, and defending against attacks targeting GNN models.
