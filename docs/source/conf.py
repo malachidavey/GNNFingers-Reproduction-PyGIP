@@ -21,7 +21,7 @@ extensions = ['sphinx.ext.autodoc',
 
 templates_path = ['_templates']
 exclude_patterns = []
-autosummary_generate = True    # 构建时自动生成 autosummary 页面
+autosummary_generate = True
 
 autodoc_default_options = {
     'members': True,
@@ -29,6 +29,14 @@ autodoc_default_options = {
     'private-members': True,
     'show-inheritance': True,
 }
+
+autodoc_mock_imports = [
+    "torch", "torchvision", "torchaudio",
+    "dgl",
+    "torch_geometric", "pyg_lib",
+    "torch_scatter", "torch_sparse", "torch_cluster", "torch_spline_conv",
+    "pylibcugraphops",
+]
 
 napoleon_google_docstring = True
 napoleon_numpy_docstring = True

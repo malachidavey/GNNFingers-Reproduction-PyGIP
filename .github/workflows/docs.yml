@@ -32,6 +32,10 @@ jobs:
             pip install sphinx myst-parser sphinx-rtd-theme sphinx-autodoc-typehints sphinx-copybutton
           fi
 
+      - name: Install package
+        run: |
+          pip install -e .
+
       - name: Build Sphinx html
         run: |
           sphinx-build -b html docs/source docs/build/html
