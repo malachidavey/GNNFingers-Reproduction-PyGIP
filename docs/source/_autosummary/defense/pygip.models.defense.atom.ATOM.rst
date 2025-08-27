@@ -4,6 +4,11 @@
 .. automodule:: pygip.models.defense.atom.ATOM
 
    
+   
+   
+
+   
+   
    .. rubric:: Functions
 
    .. autosummary::
@@ -28,6 +33,10 @@
       test_model
       train_gcn
    
+   
+
+   
+   
    .. rubric:: Classes
 
    .. autosummary::
@@ -42,3 +51,11 @@
       StateTransformMLP
       TargetGCN
    
+   
+
+   
+   
+   
+
+
+

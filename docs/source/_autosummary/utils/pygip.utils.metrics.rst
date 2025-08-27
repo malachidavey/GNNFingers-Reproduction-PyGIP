@@ -4,6 +4,15 @@
 .. automodule:: pygip.utils.metrics
 
    
+   
+   
+
+   
+   
+   
+
+   
+   
    .. rubric:: Classes
 
    .. autosummary::
@@ -14,3 +23,11 @@
       GraphNeuralNetworkMetric
       MetricBase
    
+   
+
+   
+   
+   
+
+
+

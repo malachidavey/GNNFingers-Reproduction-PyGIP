@@ -4,9 +4,26 @@
 .. automodule:: pygip.models.defense.base
 
    
+   
+   
+
+   
+   
+   
+
+   
+   
    .. rubric:: Classes
 
    .. autosummary::
    
       BaseDefense
    
+   
+
+   
+   
+   
+
+
+

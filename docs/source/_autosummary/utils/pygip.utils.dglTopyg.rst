@@ -1,8 +1,13 @@
-pygip.utils.dglTopyg
+﻿pygip.utils.dglTopyg
 ====================
 
 .. automodule:: pygip.utils.dglTopyg
 
+   
+   
+   
+
+   
    
    .. rubric:: Functions
 
@@ -10,3 +15,15 @@ pygip.utils.dglTopyg
    
       dgl_to_pyg_data
    
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+

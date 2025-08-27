@@ -1,8 +1,13 @@
-pygip.utils.hardware
+﻿pygip.utils.hardware
 ====================
 
 .. automodule:: pygip.utils.hardware
 
+   
+   
+   
+
+   
    
    .. rubric:: Functions
 
@@ -11,3 +16,15 @@ pygip.utils.hardware
       get_device
       set_device
    
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+

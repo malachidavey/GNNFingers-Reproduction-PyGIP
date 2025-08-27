@@ -4,6 +4,15 @@
 .. automodule:: pygip.models.defense.Integrity
 
    
+   
+   
+
+   
+   
+   
+
+   
+   
    .. rubric:: Classes
 
    .. autosummary::
@@ -14,3 +23,11 @@
       QueryBasedVerificationDefense
       TransductiveFingerprintGenerator
    
+   
+
+   
+   
+   
+
+
+

@@ -8,7 +8,6 @@ project = 'PyGIP'
 copyright = '2025, RAILab'
 author = 'RAILab'
 release = '1.0.0'
-html_baseurl = "https://labrai.github.io/PyGIP/"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -36,7 +35,7 @@ autodoc_mock_imports = [
     "dgl",
     "torch_geometric", "pyg_lib",
     "torch_scatter", "torch_sparse", "torch_cluster", "torch_spline_conv",
-    "pylibcugraphops",
+    "pylibcugraphops", "pandas"
 ]
 
 napoleon_google_docstring = True
@@ -47,6 +46,7 @@ napoleon_numpy_docstring = True
 
 html_theme = 'furo'
 html_static_path = ['_static']
+html_baseurl = "https://labrai.github.io/PyGIP/"
 
 html_theme_options = {
     "navigation_with_keys": True,
