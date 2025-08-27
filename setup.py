@@ -29,7 +29,7 @@ setup(
     python_requires=">=3.8",
     install_requires=[
         "torch>=2.3.0",
-        "dgl>=2.2.1",
+        # "dgl>=2.2.1",
         "torch-geometric>=2.0.0",
         "numpy>=1.19.0",
         "scipy>=1.6.0",
