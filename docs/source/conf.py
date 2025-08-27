@@ -8,6 +8,7 @@ project = 'PyGIP'
 copyright = '2025, RAILab'
 author = 'RAILab'
 release = '1.0.0'
+html_baseurl = "https://labrai.github.io/PyGIP/"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

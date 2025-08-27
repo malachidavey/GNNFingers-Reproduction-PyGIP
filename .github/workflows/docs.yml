@@ -35,6 +35,15 @@ jobs:
       - name: Install package
         run: |
           pip install -e .
+          
+
+      - name: Sanity check package discovery
+        run: |
+          python - <<'PY'
+          import pkgutil, pygip
+          print("pygip is at:", pygip.__file__)
+          print("submodules:", [m.name for m in pkgutil.walk_packages(pygip.__path__, pygip.__name__ + ".") if m.name.startswith("pygip.models")])
+          PY
 
       - name: Build Sphinx html
         run: |
