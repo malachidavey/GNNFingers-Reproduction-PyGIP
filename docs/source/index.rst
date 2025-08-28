@@ -4,9 +4,9 @@
      <img src="_static/icon.png" alt="PyGIP Icon" style="width: 600px; height: auto;">
    </div>
 
-.. image:: https://img.shields.io/badge/PyGIP-v1.0.0-blue
-   :target: https://github.com/LabRAI/PyGIP
-   :alt: PyGIP
+.. image:: https://img.shields.io/pypi/v/PyGIP
+   :target: https://pypi.org/project/PyGIP
+   :alt: PyPI Version
 
 .. image:: https://img.shields.io/github/actions/workflow/status/LabRAI/PyGIP/docs.yml
    :target: https://github.com/LabRAI/PyGIP/actions
@@ -16,13 +16,17 @@
    :target: https://github.com/LabRAI/PyGIP/blob/main/LICENSE
    :alt: License
 
-.. image:: https://img.shields.io/github/last-commit/LabRAI/PyGIP
+.. image:: https://img.shields.io/pypi/dm/pygip
    :target: https://github.com/LabRAI/PyGIP
-   :alt: Last Commit
+   :alt: PyPI Downloads
 
 .. image:: https://img.shields.io/github/issues/LabRAI/PyGIP
    :target: https://github.com/LabRAI/PyGIP
    :alt: Issues
+
+.. image:: https://img.shields.io/github/issues-pr/LabRAI/PyGIP
+   :target: https://github.com/LabRAI/PyGIP
+   :alt: Pull Requests
 
 .. image:: https://img.shields.io/github/stars/LabRAI/PyGIP
    :target: https://github.com/LabRAI/PyGIP
