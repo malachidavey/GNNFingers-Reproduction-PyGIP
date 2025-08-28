@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# build
+PyGIP.egg-info/
+dist/
+
 # IDEs
 .vscode/
 .idea/

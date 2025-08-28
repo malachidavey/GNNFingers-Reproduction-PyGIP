@@ -13,25 +13,34 @@ a modular framework to implement and test attack and defense strategies on graph
 
 ## Installation
 
-To get started with PyGIP, set up your environment by installing the required dependencies:
+PyGIP supports both CPU and GPU environments. Make sure you have Python installed (version >= 3.8, <3.13).
+
+### Base Installation
+
+First, install the core package:
 
 ```bash
-pip install -r requirements.txt
+pip install PyGIP
 ```
 
-Ensure you have Python installed (version 3.8 or higher recommended) along with the necessary libraries listed
-in `requirements.txt`.
+This will install PyGIP with minimal dependencies.
 
-Specifically, using following command to install `dgl 2.2.1` and ensure your `pytorch==2.3.0`.
+### CPU Version
 
-```shell
-pip install dgl==2.2.1 -f https://data.dgl.ai/wheels/torch-2.3/repo.html
+```bash
+pip install "PyGIP[torch,dgl]" \
+  --index-url https://download.pytorch.org/whl/cpu \
+  --extra-index-url https://pypi.org/simple \
+  -f https://data.dgl.ai/wheels/repo.html
 ```
 
-cuda (cu121)
+### GPU Version (CUDA 12.1)
 
-```shell
-pip install dgl==2.2.1 -f https://data.dgl.ai/wheels/torch-2.3/cu121/repo.html
+```bash
+pip install "PyGIP[torch,dgl]" \
+  --index-url https://download.pytorch.org/whl/cu121 \
+  --extra-index-url https://pypi.org/simple \
+  -f https://data.dgl.ai/wheels/torch-2.3/cu121/repo.html
 ```
 
 ## Quick Start
@@ -87,7 +96,7 @@ Refer to [Contributors Guideline](.github/CONTRIBUTING.md)
 
 ## License
 
-MIT License
+[BSD 2-Clause License](LICENSE)
 
 ## Contact
 
