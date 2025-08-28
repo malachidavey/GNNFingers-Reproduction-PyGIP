@@ -13,41 +13,34 @@ a modular framework to implement and test attack and defense strategies on graph
 
 ## Installation
 
+PyGIP supports both CPU and GPU environments. Make sure you have Python installed (version >= 3.8, <3.13).
+
+### Base Installation
+
+First, install the core package:
+
+```bash
+pip install PyGIP
+```
+
+This will install PyGIP with minimal dependencies.
+
 ### CPU Version
 
-Ensure you have Python installed (version 3.8 or higher recommended) along with the necessary libraries listed in
-requirements.txt.
-
 ```bash
-pip install PyGIP
+pip install "PyGIP[torch,dgl]" \
+  --index-url https://download.pytorch.org/whl/cpu \
+  --extra-index-url https://pypi.org/simple \
+  -f https://data.dgl.ai/wheels/repo.html
 ```
 
-This will install PyGIP and all required dependencies, including the CPU version of PyTorch.
+### GPU Version (CUDA 12.1)
 
 ```bash
-pip install -f https://data.dgl.ai/wheels/torch-2.3/repo.html "PyGIP[dgl]"
-```
-
-### GPU Version
-
-If you want GPU acceleration, you must install the CUDA-enabled versions of PyTorch and DGL that match your environment.
-
-1. Install PyTorch with CUDA support:
-
-```bash
-pip install torch==2.3.0 --index-url https://download.pytorch.org/whl/cu121
-```
-
-2. Install DGL compatible with torch==2.3.0 + CUDA 12.1:
-
-```bash
-pip install -f https://data.dgl.ai/wheels/torch-2.3/cu121/repo.html dgl==2.2.1
-```
-
-3. Install PyGIP:
-
-```bash
-pip install PyGIP
+pip install "PyGIP[torch,dgl]" \
+  --index-url https://download.pytorch.org/whl/cu121 \
+  --extra-index-url https://pypi.org/simple \
+  -f https://data.dgl.ai/wheels/torch-2.3/cu121/repo.html
 ```
 
 ## Quick Start
