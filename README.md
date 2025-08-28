@@ -1,6 +1,6 @@
 # PyGIP
 
-![PyPI - Version](https://img.shields.io/pypi/v/PyGIP)
+[![PyPI - Version](https://img.shields.io/pypi/v/PyGIP)](https://pypi.org/project/PyGIP)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/LabRAI/PyGIP/docs.yml)](https://github.com/LabRAI/PyGIP/actions)
 [![License](https://img.shields.io/github/license/LabRAI/PyGIP.svg)](https://github.com/LabRAI/PyGIP/blob/main/LICENSE)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/pygip)](https://github.com/LabRAI/PyGIP)
