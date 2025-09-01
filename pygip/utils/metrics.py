@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from typing import List, Dict
 
 import numpy as np
-import torch
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 
 
@@ -111,18 +110,118 @@ class DefenseMetric(MetricBase):
         return results
 
 
-class ComputationMetric:
-    def __init__(self):
-        self.train_time = []
-        self.inference_time = []
-        self.verification_time = []
-        self.gpu_mem = []
+import torch
+import numpy as np
+import time
 
-    def update(self):
-        ...
+
+class AttackCompMetric:
+    def __init__(self, gpu_count=None):
+        self.train_target_time = []
+        self.query_target_time = []
+        self.train_surrogate_time = []
+        self.inference_surrogate_time = []
+        self.attack_time = []
+
+        self.start_time = 0
+        self.total_time = 0
+
+        self.gpu_count = gpu_count or (1 if torch.cuda.is_available() else 0)
+
+        if torch.cuda.is_available():
+            torch.cuda.reset_peak_memory_stats()
+
+    def start(self):
+        self.start_time = time.time()
+
+    def end(self):
+        self.total_time = time.time() - self.start_time
+
+    def update(self, train_target_time=None, query_target_time=None, train_surrogate_time=None, attack_time=None,
+               inference_surrogate_time=None):
+        if train_target_time is not None:
+            self.train_target_time.append(train_target_time)
+        if query_target_time is not None:
+            self.query_target_time.append(query_target_time)
+        if train_surrogate_time is not None:
+            self.train_surrogate_time.append(train_surrogate_time)
+        if attack_time is not None:
+            self.attack_time.append(attack_time)
+        if inference_surrogate_time is not None:
+            self.inference_surrogate_time.append(inference_surrogate_time)
 
     def compute(self):
-        ...
+        peak_mem = 0
+        if torch.cuda.is_available():
+            peak_mem = torch.cuda.max_memory_allocated() / (1024 ** 3)  # GB
+
+        gpu_hours = (self.total_time / 3600.0) * self.gpu_count
+
+        print(
+            f"attack time: {np.mean(self.attack_time):.4f}, inference time: {np.mean(self.inference_surrogate_time):.4f}, gpu mem: {peak_mem:.4f}, gpu hours: {gpu_hours:.4f}")
+
+        return {
+            'train_target_time': np.mean(self.train_target_time),
+            'query_target_time': np.mean(self.query_target_time),
+            'train_surrogate_time': np.mean(self.train_surrogate_time),
+            'attack_time': np.mean(self.attack_time),
+            'inference_surrogate_time': np.mean(self.inference_surrogate_time),
+            'total_time': self.total_time,
+            'peak_gpu_mem(GB)': peak_mem,
+            'gpu_hours': gpu_hours
+        }
+
+
+class DefenseCompMetric:
+    def __init__(self, gpu_count=None):
+        self.train_target_time = []
+        self.train_defense_time = []
+        self.inference_defense_time = []
+        self.defense_time = []
+
+        self.start_time = 0
+        self.total_time = 0
+
+        self.gpu_count = gpu_count or (1 if torch.cuda.is_available() else 0)
+
+        if torch.cuda.is_available():
+            torch.cuda.reset_peak_memory_stats()
+
+    def start(self):
+        self.start_time = time.time()
+
+    def end(self):
+        self.total_time = time.time() - self.start_time
+
+    def update(self, train_target_time=None, train_defense_time=None, inference_defense_time=None, defense_time=None):
+        if train_target_time is not None:
+            self.train_target_time.append(train_target_time)
+        if train_defense_time is not None:
+            self.train_defense_time.append(train_defense_time)
+        if inference_defense_time is not None:
+            self.inference_defense_time.append(inference_defense_time)
+        if defense_time is not None:
+            self.defense_time.append(defense_time)
+
+    def compute(self):
+        peak_mem = 0
+        if torch.cuda.is_available():
+            peak_mem = torch.cuda.max_memory_allocated() / (1024 ** 3)  # GB
+
+        gpu_hours = (self.total_time / 3600.0) * self.gpu_count
+
+        print(
+            f"defense time: {np.mean(self.defense_time):.4f}, inference time: {np.mean(self.inference_defense_time):.4f}, gpu mem: {peak_mem:.4f}, gpu hours: {gpu_hours:.4f}")
+
+        return {
+            'train_target_time': np.mean(self.train_target_time),
+            'train_defense_time': np.mean(self.train_defense_time),
+            'inference_defense_time': np.mean(self.inference_defense_time),
+            'defense_time': np.mean(self.defense_time),
+            'total_time': self.total_time,
+            'peak_gpu_mem(GB)': peak_mem,
+            'gpu_hours': gpu_hours
+        }
 
 
 class GraphNeuralNetworkMetric:

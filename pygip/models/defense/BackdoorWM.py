@@ -1,11 +1,12 @@
 import random
+from time import time
 
 import torch
 import torch.nn.functional as F
 
 from pygip.models.defense.base import BaseDefense
 from pygip.models.nn import GCN
-from pygip.utils.metrics import DefenseMetric
+from pygip.utils.metrics import DefenseMetric, DefenseCompMetric
 
 
 class BackdoorWM(BaseDefense):
@@ -67,7 +68,7 @@ class BackdoorWM(BaseDefense):
             data[node][feature_indices] = trigger_feat_val
         return data, trigger_nodes
 
-    def train_target_model(self):
+    def train_target_model(self, metric_comp: DefenseCompMetric):
         """
         Train the target model with backdoor injection.
         """
@@ -76,6 +77,7 @@ class BackdoorWM(BaseDefense):
         optimizer = torch.optim.Adam(self.net1.parameters(), lr=0.01, weight_decay=5e-4)
 
         # Inject backdoor trigger
+        defense_s = time()
         poisoned_features = self.features.clone()
         poisoned_labels = self.labels.clone()
 
@@ -95,6 +97,7 @@ class BackdoorWM(BaseDefense):
         self.trigger_nodes = trigger_nodes
         self.poisoned_features = poisoned_features
         self.poisoned_labels = poisoned_labels
+        defense_e = time()
 
         # Training loop
         for epoch in range(200):
@@ -119,6 +122,8 @@ class BackdoorWM(BaseDefense):
                     pred = logp_val.argmax(dim=1)
                     acc_val = (pred[self.test_mask] == poisoned_labels[self.test_mask]).float().mean()
                     print(f"  Epoch {epoch}: training... Validation Accuracy: {acc_val.item():.4f}")
+
+        metric_comp.update(defense_time=(defense_e - defense_s))
 
         return self.net1
 
@@ -145,23 +150,30 @@ class BackdoorWM(BaseDefense):
         """
         Execute the backdoor watermark defense.
         """
+        metric_comp = DefenseCompMetric()
+        metric_comp.start()
         print("====================Backdoor Watermark====================")
 
         # If model wasn't trained yet, train it
         if not hasattr(self, 'net1'):
-            self.train_target_model()
+            self.train_target_model(metric_comp)
 
         # Evaluate the backdoored model
         preds = self.evaluate_model(self.net1, self.poisoned_features)
+        inference_s = time()
         backdoor_preds = self.verify_backdoor(self.net1, self.trigger_nodes)
+        inference_e = time()
 
         # metric
         metric = DefenseMetric()
         metric.update(preds, self.poisoned_labels[self.test_mask])
         target = torch.full_like(backdoor_preds, fill_value=self.target_label)
         metric.update_wm(backdoor_preds, target)
+        metric_comp.end()
 
         print("====================Final Results====================")
-        metric.compute()
+        res = metric.compute()
+        metric_comp.update(inference_defense_time=(inference_e - inference_s))
+        res_comp = metric_comp.compute()
 
-        return metric
+        return res, res_comp
