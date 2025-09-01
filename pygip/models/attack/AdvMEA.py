@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 from pygip.models.attack.base import BaseAttack
 from pygip.models.nn import GCN
-from pygip.utils.metrics import GraphNeuralNetworkMetric
+from pygip.utils.metrics import GraphNeuralNetworkMetric, AttackMetric
 
 
 class AdvMEA(BaseAttack):
@@ -203,6 +203,7 @@ class AdvMEA(BaseAttack):
 
         print("=========Model Extracting==========================")
         best_performance_metrics = GraphNeuralNetworkMetric()
+        metric = AttackMetric()
 
         for epoch in tqdm(range(200)):
             if epoch >= 3:
@@ -223,17 +224,12 @@ class AdvMEA(BaseAttack):
             # Switch to evaluation mode
             net6.eval()
             with torch.no_grad():
-                focus_gnn_metrics = GraphNeuralNetworkMetric(
-                    0, 0, net6, g, self.features, self.test_mask, self.labels, labels_query)
-                focus_gnn_metrics.evaluate()
-
-                best_performance_metrics.fidelity = max(
-                    best_performance_metrics.fidelity, focus_gnn_metrics.fidelity)
-                best_performance_metrics.accuracy = max(
-                    best_performance_metrics.accuracy, focus_gnn_metrics.accuracy)
+                logits = net6(g, self.features)
+                _, preds = torch.max(logits[self.test_mask], dim=1)
+                metric.update(preds, self.labels[self.test_mask], labels_query[self.test_mask])
 
         print("========================Final results:=========================================")
-        print(best_performance_metrics)
+        metric.compute()
 
         self.net2 = net6
 

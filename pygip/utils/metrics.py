@@ -8,10 +8,11 @@ class MetricBase(ABC):
     def __init__(self):
         self.preds = []
         self.labels = []
+        self.query_label = []
         self.reset()
 
     @abstractmethod
-    def update(self, preds, labels, **kwargs):
+    def update(self, preds, labels, query_label):
         """Update internal metric state."""
         pass
 
@@ -20,11 +21,11 @@ class MetricBase(ABC):
         """Compute and return all metric results."""
         pass
 
-    @abstractmethod
     def reset(self):
         """Reset internal state."""
         self.preds = []
         self.labels = []
+        self.query_label = []
 
     @staticmethod
     def compute_default_metrics(preds, labels):
@@ -33,13 +34,13 @@ class MetricBase(ABC):
             'F1': f1_score(labels, preds, average='macro'),
             'Precision': precision_score(labels, preds, average='macro'),
             'Recall': recall_score(labels, preds, average='macro'),
-            'AUROC': roc_auc_score(labels, preds, multi_class='ovr')
+            # 'AUROC': roc_auc_score(labels, preds, multi_class='ovr')
         }
 
     @staticmethod
-    def compute_fidelity(output1, output2):
+    def compute_fidelity(preds_label, query_label):
         return {
-            'Fidelity': (output1.argmax(dim=1) == output2.argmax(dim=1)).float().mean().item()
+            'Fidelity': (preds_label == query_label).astype(float).mean().item()
         }
 
     @staticmethod
@@ -58,14 +59,19 @@ class AttackMetric(MetricBase):
     def __init__(self):
         super().__init__()
 
-    def update(self, preds, labels, target_outputs=None, surrogate_outputs=None):
+    def update(self, preds, labels, query_label):
         self.preds.append(preds.detach().cpu())
         self.labels.append(labels.detach().cpu())
+        self.query_label.append(query_label.detach().cpu())
 
     def compute(self):
         preds = torch.cat(self.preds).numpy()
         labels = torch.cat(self.labels).numpy()
-        results = self.compute_default_metrics(preds, labels)
+        query_label = torch.cat(self.query_label).numpy()
+        defaults = self.compute_default_metrics(preds, labels)
+        fidelity = self.compute_fidelity(preds, query_label)
+        results = defaults | fidelity
+        print(f"acc: {results['Acc']:.4f}, fidelity: {results['Fidelity']:.4f}")
         return results
 
 
