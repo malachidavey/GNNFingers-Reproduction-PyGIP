@@ -9,7 +9,7 @@ from pygip.models.defense import IntegrityVerification
 
 def integrity():
     dataset = Cora(api_type='dgl')
-    med = IntegrityVerification(dataset, attack_node_fraction=0.1)
+    med = IntegrityVerification(dataset, defense_ratio=0.1)
     med.defend()
 
 

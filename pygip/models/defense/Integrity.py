@@ -2,33 +2,41 @@ import copy
 import random
 
 import dgl
-import numpy as np
 import torch
-import torch.nn.functional as F
+import numpy as np
+from tqdm import tqdm
 import torch.optim as optim
 from torch.optim import Adam
+import torch.nn.functional as F
 from torch_geometric.utils import to_networkx, from_networkx
-from tqdm import tqdm
 
-from pygip.models.nn import GCN
 from .base import BaseDefense
+from pygip.models.nn import GCN
+from ...utils.metrics import DefenseCompMetric
 
 
 class QueryBasedVerificationDefense(BaseDefense):
     supported_api_types = {"dgl"}
     supported_datasets = {}
 
-    def __init__(self, dataset, attack_node_fraction, model_path=None):
-        super().__init__(dataset, attack_node_fraction)
+    def __init__(self, dataset, defense_ratio=0.1, model_path=None):
+        super().__init__(dataset, defense_ratio)
+        self.defense_ratio = defense_ratio
+        # compute related parameters
+        self.k = max(1, int(dataset.num_nodes * defense_ratio))
         self.model_path = model_path
 
     def defend(self, fingerprint_mode='inductive', knowledge='full', attack_type='bitflip',
                k=5, num_trials=10, use_edge_perturbation=False, verbose=True, **kwargs):
-
         """
         Main defense routine. Generates fingerprints, runs attacks, and verifies integrity.
         Returns a dict with per-trial and average metrics.
         """
+        metric_comp = DefenseCompMetric()
+        metric_comp.start()
+
+        k = kwargs.get('k', self.k)
+
         trial_results = []
         for trial in range(num_trials):
             if verbose:
@@ -84,12 +92,16 @@ class QueryBasedVerificationDefense(BaseDefense):
         avg_acc_drop = sum(r['accuracy_drop'] for r in trial_results) / num_trials
         avg_detection_rate = sum(r['detection_rate'] for r in trial_results) / num_trials
 
-        return {
+        metric_comp.end()
+
+        performance_metrics = {
             'trial_results': trial_results,
             'average_flip_rate': avg_flip_rate,
             'average_accuracy_drop': avg_acc_drop,
             'average_detection_rate': avg_detection_rate
         }
+
+        return performance_metrics, metric_comp.compute()
 
     def _get_features(self):
         return self.graph_data.ndata['feat'] if hasattr(self.graph_data, 'ndata') else self.graph_data.x
@@ -341,7 +353,7 @@ class QueryBasedVerificationDefense(BaseDefense):
         dataset_poisoned = copy.deepcopy(self.dataset)
         dataset_poisoned.graph_data = poisoned_graph
 
-        defense = QueryBasedVerificationDefense(dataset=dataset_poisoned, attack_node_fraction=0.1)
+        defense = QueryBasedVerificationDefense(dataset=dataset_poisoned, defense_ratio=0.1)
         model = defense._train_target_model(epochs=epochs)
         return model
 

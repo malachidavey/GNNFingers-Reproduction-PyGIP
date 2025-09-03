@@ -1,27 +1,29 @@
 import copy
 
 import torch
+from tqdm import tqdm
 import torch.nn as nn
 import torch.nn.functional as F
-from sklearn.metrics import precision_score, recall_score, f1_score
 from torch_geometric.nn import GCNConv
 from torch_geometric.utils import to_dense_adj, dense_to_sparse
-from tqdm import tqdm
+from sklearn.metrics import precision_score, recall_score, f1_score
 
-from pygip.models.nn.backbones import GCN_PyG
 from .base import BaseDefense
+from pygip.models.nn.backbones import GCN_PyG
+from ...utils.metrics import DefenseCompMetric
 
 
 class ImperceptibleWM(BaseDefense):
     supported_api_types = {"pyg"}
 
-    def __init__(self, dataset, attack_node_fraction=0.3, model_path=None):
-        super().__init__(dataset, attack_node_fraction)
+    def __init__(self, dataset, defense_ratio=0.1, model_path=None):
+        super().__init__(dataset, defense_ratio)
         # load data
         self.dataset = dataset
         self.graph_dataset = dataset.graph_dataset
         self.graph_data = dataset.graph_data.to(self.device)
-        self.attack_node_fraction = attack_node_fraction
+        self.defense_ratio = defense_ratio
+        self.num_triggers = int(dataset.num_nodes * defense_ratio)
         self.model_path = model_path
 
         self.owner_id = torch.tensor([0.1, 0.3, 0.5, 0.7, 0.9], dtype=torch.float32, device=self.graph_data.x.device)
@@ -33,14 +35,17 @@ class ImperceptibleWM(BaseDefense):
         self.model = GCN_PyG(in_feats, 128, num_classes).to(self.device)
 
     def defend(self):
+        metric_comp = DefenseCompMetric()
+        metric_comp.start()
         pyg_data = self.graph_data
-        bi_level_optimization(self.model, self.generator, pyg_data)
-        trigger_data = generate_trigger_graph(pyg_data, self.generator, self.model)
+        bi_level_optimization(self.model, self.generator, pyg_data, self.num_triggers)
+        trigger_data = generate_trigger_graph(pyg_data, self.generator, self.model, self.num_triggers)
         metrics = calculate_metrics(self.model, trigger_data)
+        metric_comp.end()
         print("========================Final results:=========================================")
         for name, value in metrics.items():
             print(f"{name}: {value:.4f}")
-        return metrics
+        return metrics, metric_comp.compute()
 
     def _load_model(self):
         if self.model_path:
@@ -129,7 +134,7 @@ def generate_trigger_graph(data, generator, target_model, num_triggers=50):
     return new_data
 
 
-def bi_level_optimization(target_model, generator, data, epochs=100, inner_steps=5):
+def bi_level_optimization(target_model, generator, data, num_triggers, epochs=100, inner_steps=5):
     optimizer_model = torch.optim.Adam(target_model.parameters(), lr=0.01)
     optimizer_gen = torch.optim.Adam(generator.parameters(), lr=0.01)
     criterion = nn.CrossEntropyLoss()
@@ -137,7 +142,7 @@ def bi_level_optimization(target_model, generator, data, epochs=100, inner_steps
     for epoch in tqdm(range(epochs)):
         for _ in range(inner_steps):
             optimizer_model.zero_grad()
-            trigger_data = generate_trigger_graph(data, generator, target_model)
+            trigger_data = generate_trigger_graph(data, generator, target_model, num_triggers)
 
             out_clean = target_model(data.x, data.edge_index)
             out_trigger = target_model(trigger_data.x, trigger_data.edge_index)
@@ -151,7 +156,7 @@ def bi_level_optimization(target_model, generator, data, epochs=100, inner_steps
             optimizer_model.step()
 
         optimizer_gen.zero_grad()
-        trigger_data = generate_trigger_graph(data, generator, target_model)
+        trigger_data = generate_trigger_graph(data, generator, target_model, num_triggers)
 
         orig_features = data.x[trigger_data.selected_nodes]
         trigger_features = trigger_data.x[trigger_data.trigger_nodes]
