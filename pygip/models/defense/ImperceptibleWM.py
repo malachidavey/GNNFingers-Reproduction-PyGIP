@@ -1,9 +1,9 @@
 import copy
 
 import torch
-from tqdm import tqdm
 import torch.nn as nn
 import torch.nn.functional as F
+from tqdm import tqdm
 from torch_geometric.nn import GCNConv
 from torch_geometric.utils import to_dense_adj, dense_to_sparse
 from sklearn.metrics import precision_score, recall_score, f1_score

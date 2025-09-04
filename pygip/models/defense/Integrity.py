@@ -4,8 +4,8 @@ import random
 import dgl
 import torch
 import numpy as np
-from tqdm import tqdm
 import torch.optim as optim
+from tqdm import tqdm
 from torch.optim import Adam
 import torch.nn.functional as F
 from torch_geometric.utils import to_networkx, from_networkx

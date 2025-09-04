@@ -3,8 +3,8 @@ import importlib
 import dgl
 import torch
 import numpy as np
-from tqdm import tqdm
 import torch.nn.functional as F
+from tqdm import tqdm
 from torch.utils.data import DataLoader
 from torch_geometric.utils import erdos_renyi_graph
 from dgl.dataloading import NeighborSampler, NodeCollator
@@ -136,7 +136,7 @@ class RandomWM(BaseDefense):
         target_model = self._train_target_model()
 
         # Step 2: Attack target model
-        attack = AttackClass(self.dataset, attack_node_fraction=0.2)
+        attack = AttackClass(self.dataset, attack_node_fraction=self.defense_ratio)
         target_attack_results = attack.attack()
         print("Attack results on target model:")
         if isinstance(target_attack_results, dict):
