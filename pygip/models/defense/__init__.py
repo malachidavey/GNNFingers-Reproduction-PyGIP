@@ -16,5 +16,6 @@ __all__ = [
     'SurviveWM',
     'SurviveWM2',
     'ATOM',
+    'IntegrityVerification',
     'Revisiting'
 ]

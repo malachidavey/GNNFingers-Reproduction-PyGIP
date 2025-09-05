@@ -9,6 +9,7 @@ from tqdm import tqdm
 
 from pygip.models.defense.base import BaseDefense
 from pygip.models.nn import GraphSAGE
+from pygip.utils.metrics import DefenseCompMetric
 
 
 class Revisiting(BaseDefense):
@@ -75,13 +76,15 @@ class Revisiting(BaseDefense):
     # --------------------------------------------------------------------- #
     # Public entrypoint
     # --------------------------------------------------------------------- #
-    def defend(self) -> Dict[str, Any]:
+    def defend(self) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         """
         1) Train a baseline GraphSAGE on the original graph (utility baseline)
         2) Apply revisiting feature-mixing on a subset of nodes
         3) Train a defended GraphSAGE on the transformed features
         4) Return accuracy metrics and basic metadata
         """
+        metric_comp = DefenseCompMetric()
+        metric_comp.start()
         # ---- Baseline (no transform) ------------------------------------- #
         baseline_acc = self._train_and_eval_graphsage(use_transformed_features=False)
 
@@ -97,7 +100,7 @@ class Revisiting(BaseDefense):
         finally:
             self.graph.ndata["feat"] = orig_feat  # restore
 
-        return {
+        res = {
             "ok": True,
             "method": "Revisiting",
             "alpha": self.alpha,
@@ -108,6 +111,8 @@ class Revisiting(BaseDefense):
             # returning a small sample of picked nodes for debuggability
             "sample_picked_nodes": picked[:10].tolist() if isinstance(picked, torch.Tensor) else [],
         }
+
+        return res, metric_comp.compute()
 
     # --------------------------------------------------------------------- #
     # Core: feature revisiting (neighbor mixing)

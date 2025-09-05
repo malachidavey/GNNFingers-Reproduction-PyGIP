@@ -1,16 +1,17 @@
 import importlib
 
 import dgl
-import numpy as np
 import torch
+import numpy as np
 import torch.nn.functional as F
-from dgl.dataloading import NeighborSampler, NodeCollator
+from tqdm import tqdm
 from torch.utils.data import DataLoader
 from torch_geometric.utils import erdos_renyi_graph
-from tqdm import tqdm
+from dgl.dataloading import NeighborSampler, NodeCollator
 
-from pygip.models.defense.base import BaseDefense
 from pygip.models.nn import GraphSAGE
+from pygip.models.defense.base import BaseDefense
+from pygip.utils.metrics import DefenseCompMetric
 
 
 class RandomWM(BaseDefense):
@@ -27,26 +28,25 @@ class RandomWM(BaseDefense):
     """
     supported_api_types = {"dgl"}
 
-    def __init__(self, dataset, attack_node_fraction=0.2, wm_node=50, pr=0.2, pg=0.2, attack_name=None):
+    def __init__(self, dataset, defense_ratio=0.1, wm_node=50, pr=0.2, pg=0.2, attack_name=None):
         """
         Initialize the custom defense.
         
         Parameters
         ----------
-        dataset : Dataset
-            The original dataset containing the graph to defend
-        attack_node_fraction : float, optional
-            Fraction of nodes to consider for attack (default: 0.25)
-        wm_node : int, optional
-            Number of nodes in the watermark graph (default: 50)
-        pr : float, optional
-            Probability for feature generation in watermark (default: 0.1)
-        pg : float, optional
-            Probability for edge creation in watermark (default: 0)
-        attack_name : str, optional
-            Name of the attack class to use (default: None, will use ModelExtractionAttack0)
+        defense_ratio : float
+        Defense strength (0-1): used to determine the number of watermark nodes and the attack node sampling scale
+        wm_node : Optional[int]
+        If specified, a fixed number of watermark nodes is used; otherwise, a dynamic calculation is performed based on defense_ratio * num_nodes
+        pr : float
+        Bernoulli probability of the watermark feature being 1
+        pg : float
+        Edge probability of the watermark graph
+        attack_name : Optional[str]
+        Attack class name (from models.attack)
         """
-        super().__init__(dataset, attack_node_fraction)
+        super().__init__(dataset, defense_ratio)
+        self.defense_ratio = defense_ratio
         self.attack_name = attack_name or "ModelExtractionAttack0"
         self.dataset = dataset
         self.graph = dataset.graph_data
@@ -55,10 +55,10 @@ class RandomWM(BaseDefense):
         self.node_number = dataset.num_nodes
         self.feature_number = dataset.num_features
         self.label_number = dataset.num_classes
-        self.attack_node_number = int(self.node_number * attack_node_fraction)
+        self.attack_node_number = int(self.node_number * defense_ratio)
 
         # Watermark parameters
-        self.wm_node = wm_node
+        self.wm_node = int(wm_node) if wm_node is not None else max(10, int(dataset.num_nodes * defense_ratio))
         self.pr = pr
         self.pg = pg
 
@@ -123,6 +123,9 @@ class RandomWM(BaseDefense):
         dict
             Dictionary containing performance metrics
         """
+        metric_comp = DefenseCompMetric()
+        metric_comp.start()
+
         # Use the provided attack_name or fall back to the one from __init__
         attack_name = attack_name or self.attack_name
         AttackClass = self._get_attack_class(attack_name)
@@ -133,7 +136,7 @@ class RandomWM(BaseDefense):
         target_model = self._train_target_model()
 
         # Step 2: Attack target model
-        attack = AttackClass(self.dataset, attack_node_fraction=0.2)
+        attack = AttackClass(self.dataset, attack_node_fraction=self.defense_ratio)
         target_attack_results = attack.attack()
         print("Attack results on target model:")
         if isinstance(target_attack_results, dict):
@@ -150,7 +153,7 @@ class RandomWM(BaseDefense):
         defense_model = self._train_defense_model()
 
         # Step 4: Test the defense model against the same attack
-        attack = AttackClass(self.dataset, attack_node_fraction=0.2)
+        attack = AttackClass(self.dataset, attack_node_fraction=self.defense_ratio)
         defense_attack_results = attack.attack()
 
         defense_attack_model = attack.net2 if hasattr(attack, 'net2') else None
@@ -187,13 +190,17 @@ class RandomWM(BaseDefense):
         wm_detection = self._evaluate_watermark(defense_model)
         print(f"Watermark detection accuracy: {wm_detection:.4f}")
 
-        return {
+        metric_comp.end()
+
+        performance_metrics = {
             "target_attack_results": target_attack_results,
             "defense_attack_results": defense_attack_results,
             "watermark_detection": wm_detection,
             "target_attack_watermark_accuracy": watermark_accuracy_by_target_attack,
             "defense_attack_watermark_accuracy": watermark_accuracy_by_defense_attack
         }
+
+        return performance_metrics, metric_comp.compute()
 
     def _train_target_model(self):
         """
