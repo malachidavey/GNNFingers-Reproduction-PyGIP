@@ -9,7 +9,7 @@ from pygip.models.defense import ImperceptibleWM
 
 def imperceptiblewm():
     dataset = Cora(api_type='pyg')
-    med = ImperceptibleWM(dataset, attack_node_fraction=0.1)
+    med = ImperceptibleWM(dataset, defense_ratio=0.1)
     med.defend()
 
 

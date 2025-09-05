@@ -9,7 +9,7 @@ from pygip.models.defense import RandomWM
 
 def randomwm():
     dataset = Cora(api_type='dgl')
-    med = RandomWM(dataset, attack_node_fraction=0.1, wm_node=50, pr=0.1, pg=0.1)
+    med = RandomWM(dataset, defense_ratio=0.1, wm_node=50, pr=0.1, pg=0.1)
     med.defend()
 
 

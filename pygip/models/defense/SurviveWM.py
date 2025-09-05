@@ -1,23 +1,23 @@
 import time
 
 import dgl
-import networkx as nx
 import torch
+import networkx as nx
 import torch.nn.functional as F
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, roc_auc_score
-from torch_geometric.data import Data
 from tqdm import tqdm
+from torch_geometric.data import Data
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, roc_auc_score
 
 from pygip.models.defense.base import BaseDefense
 from pygip.models.nn import GCN
-from pygip.utils.metrics import GraphNeuralNetworkMetric
+from pygip.utils.metrics import GraphNeuralNetworkMetric, DefenseCompMetric
 
 
 class SurviveWM(BaseDefense):
     supported_api_types = {"dgl"}
 
-    def __init__(self, dataset, attack_node_fraction, model_path=None):
-        super().__init__(dataset, attack_node_fraction)
+    def __init__(self, dataset, defense_ratio: float = 0.1, model_path=None):
+        super().__init__(dataset, defense_ratio)
         # load graph data
         self.dataset = dataset
         self.graph_dataset = dataset.graph_data
@@ -34,7 +34,7 @@ class SurviveWM(BaseDefense):
         self.label_number = dataset.num_classes
 
         # params
-        self.attack_node_fraction = attack_node_fraction
+        self.defense_ratio = defense_ratio
 
     def _load_model(self):
         """
@@ -73,7 +73,12 @@ class SurviveWM(BaseDefense):
         return loss
 
     # === Trigger Graph Generator ===
-    def generate_key_graph(self, num_nodes=10, edge_prob=0.3):
+    def generate_key_graph(self, num_nodes=None, edge_prob=None):
+        if num_nodes is None:
+            num_nodes = max(5, int(self.dataset.num_nodes * self.defense_ratio))
+        if edge_prob is None:
+            edge_prob = min(0.5, self.defense_ratio * 3)
+
         trigger = nx.erdos_renyi_graph(num_nodes, edge_prob)
         edge_index = torch.tensor(list(trigger.edges), dtype=torch.long).t().contiguous()
         if edge_index.numel() == 0:
@@ -133,6 +138,9 @@ class SurviveWM(BaseDefense):
 
     def defend(self):
         print("=========SurviveWM Attack==========================")
+
+        metric_comp = DefenseCompMetric()
+        metric_comp.start()
 
         # Generate trigger graph
         trigger_data = self.generate_key_graph().to(self.device)
@@ -230,4 +238,14 @@ class SurviveWM(BaseDefense):
 
         self.net2 = watermarked_model
 
-        return final_metrics, watermarked_model
+        metric_comp.end()
+
+        performance_metrics = {
+            'accuracy': test_metrics['accuracy'],
+            'f1': test_metrics['f1'],
+            'precision': test_metrics['precision'],
+            'recall': test_metrics['recall'],
+            'watermark_accuracy': wm_acc
+        }
+
+        return performance_metrics, metric_comp.compute()

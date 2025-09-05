@@ -9,7 +9,7 @@ from pygip.models.defense import SurviveWM
 
 def survivewm():
     dataset = Cora(api_type='dgl')
-    med = SurviveWM(dataset, attack_node_fraction=0.1)
+    med = SurviveWM(dataset, defense_ratio=0.1)
     med.defend()
 
 

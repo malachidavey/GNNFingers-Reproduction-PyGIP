@@ -14,5 +14,6 @@ __all__ = [
     'RandomWM',
     'SurviveWM',
     'SurviveWM2',
-    'ATOM'
+    'ATOM',
+    'IntegrityVerification'
 ]
