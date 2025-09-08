@@ -1,4 +1,5 @@
 import importlib
+import time
 
 import dgl
 import torch
@@ -11,7 +12,7 @@ from dgl.dataloading import NeighborSampler, NodeCollator
 
 from pygip.models.nn import GraphSAGE
 from pygip.models.defense.base import BaseDefense
-from pygip.utils.metrics import DefenseCompMetric
+from pygip.utils.metrics import DefenseCompMetric, DefenseMetric
 
 
 class RandomWM(BaseDefense):
@@ -106,101 +107,103 @@ class RandomWM(BaseDefense):
 
     def defend(self, attack_name=None):
         """
-        Main defense workflow:
-        1. Train a target model on the original graph
-        2. Attack the target model to establish baseline vulnerability
-        3. Train a defense model with watermarking
-        4. Test the defense model against the same attack
-        5. Print performance metrics
-        
-        Parameters
-        ----------
-        attack_name : str, optional
-            Name of the attack class to use, overrides the one set in __init__
-            
-        Returns
-        -------
-        dict
-            Dictionary containing performance metrics
+        Execute the random watermark defense.
         """
         metric_comp = DefenseCompMetric()
         metric_comp.start()
+        print("====================Random Watermark Defense====================")
 
-        # Use the provided attack_name or fall back to the one from __init__
-        attack_name = attack_name or self.attack_name
-        AttackClass = self._get_attack_class(attack_name)
+        # If model wasn't trained yet, train it
+        if not hasattr(self, 'model_trained'):
+            self.train_target_model(metric_comp)
 
-        print(f"Using attack method: {attack_name}")
+        # Evaluate the defended model
+        preds = self.evaluate_model(self.defense_model, self.dataset)
+        inference_s = time.time()
+        wm_preds = self.verify_watermark(self.defense_model)
+        inference_e = time.time()
 
-        # Step 1: Train target model
-        target_model = self._train_target_model()
-
-        # Step 2: Attack target model
-        attack = AttackClass(self.dataset, attack_node_fraction=self.defense_ratio)
-        target_attack_results = attack.attack()
-        print("Attack results on target model:")
-        if isinstance(target_attack_results, dict):
-            if 'success_rate' in target_attack_results:
-                print(f"Attack success rate: {target_attack_results['success_rate']:.4f}")
-            if 'similarity' in target_attack_results:
-                print(f"Model similarity: {target_attack_results['similarity']:.4f}")
-        else:
-            print("Attack completed. Results structure varies by attack type.")
-            target_attack_results = {"completed": True}
-
-        # Step 3: Train defense model with watermarking
-        target_attack_model = attack.net2 if hasattr(attack, 'net2') else None
-        defense_model = self._train_defense_model()
-
-        # Step 4: Test the defense model against the same attack
-        attack = AttackClass(self.dataset, attack_node_fraction=self.defense_ratio)
-        defense_attack_results = attack.attack()
-
-        defense_attack_model = attack.net2 if hasattr(attack, 'net2') else None
-
-        watermark_accuracy_by_target_attack = 0
-        if target_attack_model is not None:
-            watermark_accuracy_by_target_attack = self._evaluate_attack_on_watermark(target_attack_model)
-            print(f"Target attack model's accuracy on watermark: {watermark_accuracy_by_target_attack:.4f}")
-
-        watermark_accuracy_by_defense_attack = 0
-        if defense_attack_model is not None:
-            watermark_accuracy_by_defense_attack = self._evaluate_attack_on_watermark(defense_attack_model)
-            print(f"Defense attack model's accuracy on watermark: {watermark_accuracy_by_defense_attack:.4f}")
-
-        # Step 5: Print performance metrics
-        print("\nPerformance metrics:")
-        print("Attack results on defense model:")
-        if isinstance(defense_attack_results, dict):
-            if 'success_rate' in defense_attack_results:
-                print(f"Attack success rate: {defense_attack_results['success_rate']:.4f}")
-            if 'similarity' in defense_attack_results:
-                print(f"Model similarity: {defense_attack_results['similarity']:.4f}")
-
-            # Calculate defense effectiveness if metrics are available
-            if 'success_rate' in target_attack_results and 'success_rate' in defense_attack_results:
-                effectiveness = 1 - defense_attack_results['success_rate'] / max(target_attack_results['success_rate'],
-                                                                                 1e-10)
-                print(f"Defense effectiveness: {effectiveness:.4f}")
-        else:
-            print("Attack completed. Results structure varies by attack type.")
-            defense_attack_results = {"completed": True}
-
-        # Evaluate watermark detection
-        wm_detection = self._evaluate_watermark(defense_model)
-        print(f"Watermark detection accuracy: {wm_detection:.4f}")
-
+        # metric
+        metric = DefenseMetric()
+        metric.update(preds, self.labels[self.test_mask])
+        wm_labels = self.watermark_graph.ndata['label']
+        metric.update_wm(wm_preds, wm_labels)
         metric_comp.end()
 
-        performance_metrics = {
-            "target_attack_results": target_attack_results,
-            "defense_attack_results": defense_attack_results,
-            "watermark_detection": wm_detection,
-            "target_attack_watermark_accuracy": watermark_accuracy_by_target_attack,
-            "defense_attack_watermark_accuracy": watermark_accuracy_by_defense_attack
-        }
+        print("====================Final Results====================")
+        res = metric.compute()
+        metric_comp.update(inference_defense_time=(inference_e - inference_s))
+        res_comp = metric_comp.compute()
 
-        return performance_metrics, metric_comp.compute()
+        return res, res_comp
+
+    def train_target_model(self, metric_comp: DefenseCompMetric):
+        """Train the target model with watermark injection."""
+        defense_s = time.time()
+
+        # Training and watermark generation (defense mechanism)
+        self.defense_model = self._train_defense_model()
+        self.model_trained = True
+
+        defense_e = time.time()
+        metric_comp.update(defense_time=(defense_e - defense_s))
+        return self.defense_model
+
+    def evaluate_model(self, model, dataset):
+        """Evaluate model performance on downstream task"""
+        model.eval()
+
+        # Setup data loading
+        sampler = NeighborSampler([5, 5])
+        test_nids = self.test_mask.nonzero(as_tuple=True)[0].to(self.device)
+        test_collator = NodeCollator(self.graph, test_nids, sampler)
+        test_dataloader = DataLoader(
+            test_collator.dataset,
+            batch_size=32,
+            shuffle=False,
+            collate_fn=test_collator.collate,
+            drop_last=False
+        )
+
+        all_preds = []
+        with torch.no_grad():
+            for _, _, blocks in test_dataloader:
+                blocks = [b.to(self.device) for b in blocks]
+                input_features = blocks[0].srcdata['feat']
+                output_predictions = model(blocks, input_features)
+                pred = output_predictions.argmax(dim=1)
+                all_preds.append(pred)
+
+        preds = torch.cat(all_preds, dim=0).cpu()
+        return preds
+
+    def verify_watermark(self, model):
+        """Verify watermark success rate"""
+        model.eval()
+
+        # Setup data loading for watermark graph
+        sampler = NeighborSampler([5, 5])
+        wm_nids = torch.arange(self.watermark_graph.number_of_nodes(), device=self.device)
+        wm_collator = NodeCollator(self.watermark_graph, wm_nids, sampler)
+        wm_dataloader = DataLoader(
+            wm_collator.dataset,
+            batch_size=self.wm_node,
+            shuffle=False,
+            collate_fn=wm_collator.collate,
+            drop_last=False
+        )
+
+        all_preds = []
+        with torch.no_grad():
+            for _, _, blocks in wm_dataloader:
+                blocks = [b.to(self.device) for b in blocks]
+                input_features = blocks[0].srcdata['feat']
+                output_predictions = model(blocks, input_features)
+                pred = output_predictions.argmax(dim=1)
+                all_preds.append(pred)
+
+        wm_preds = torch.cat(all_preds, dim=0).cpu()
+        return wm_preds
 
     def _train_target_model(self):
         """

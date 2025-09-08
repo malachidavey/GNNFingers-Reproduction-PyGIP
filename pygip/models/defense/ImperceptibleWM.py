@@ -1,4 +1,5 @@
 import copy
+import time
 
 import torch
 import torch.nn as nn
@@ -10,7 +11,7 @@ from sklearn.metrics import precision_score, recall_score, f1_score
 
 from .base import BaseDefense
 from pygip.models.nn.backbones import GCN_PyG
-from ...utils.metrics import DefenseCompMetric
+from pygip.utils.metrics import DefenseCompMetric, DefenseMetric
 
 
 class ImperceptibleWM(BaseDefense):
@@ -19,6 +20,7 @@ class ImperceptibleWM(BaseDefense):
     def __init__(self, dataset, defense_ratio=0.1, model_path=None):
         super().__init__(dataset, defense_ratio)
         # load data
+        self.model_trained = None
         self.dataset = dataset
         self.graph_dataset = dataset.graph_dataset
         self.graph_data = dataset.graph_data.to(self.device)
@@ -35,17 +37,66 @@ class ImperceptibleWM(BaseDefense):
         self.model = GCN_PyG(in_feats, 128, num_classes).to(self.device)
 
     def defend(self):
+        """
+        Execute the imperceptible watermark defense.
+        """
         metric_comp = DefenseCompMetric()
         metric_comp.start()
+        print("====================Imperceptible Watermark====================")
+
+        # If model wasn't trained yet, train it
+        if not hasattr(self, 'model_trained'):
+            self.train_target_model(metric_comp)
+
+        # Evaluate the watermarked model
+        trigger_data = generate_trigger_graph(self.graph_data, self.generator, self.model, self.num_triggers)
+        preds = self.evaluate_model(trigger_data)
+        inference_s = time.time()
+        wm_preds = self.verify_watermark(trigger_data)
+        inference_e = time.time()
+
+        # metric
+        metric = DefenseMetric()
+        metric.update(preds, trigger_data.y[trigger_data.original_test_mask])
+        wm_true = trigger_data.y[trigger_data.trigger_nodes]
+        metric.update_wm(wm_preds, wm_true)
+        metric_comp.end()
+
+        print("====================Final Results====================")
+        res = metric.compute()
+        metric_comp.update(inference_defense_time=(inference_e - inference_s))
+        res_comp = metric_comp.compute()
+
+        return res, res_comp
+
+    def train_target_model(self, metric_comp: DefenseCompMetric):
+        """Train the target model with watermark injection."""
+        defense_s = time.time()
+
         pyg_data = self.graph_data
         bi_level_optimization(self.model, self.generator, pyg_data, self.num_triggers)
-        trigger_data = generate_trigger_graph(pyg_data, self.generator, self.model, self.num_triggers)
-        metrics = calculate_metrics(self.model, trigger_data)
-        metric_comp.end()
-        print("========================Final results:=========================================")
-        for name, value in metrics.items():
-            print(f"{name}: {value:.4f}")
-        return metrics, metric_comp.compute()
+        
+        self.model_trained = True
+        defense_e = time.time()
+
+        metric_comp.update(defense_time=(defense_e - defense_s))
+        return self.model
+
+    def evaluate_model(self, trigger_data):
+        """Evaluate model performance on downstream task"""
+        self.model.eval()
+        with torch.no_grad():
+            out = self.model(trigger_data.x, trigger_data.edge_index)
+            preds = out[trigger_data.original_test_mask].argmax(dim=1).cpu()
+        return preds
+
+    def verify_watermark(self, trigger_data):
+        """Verify watermark success rate"""
+        self.model.eval()
+        with torch.no_grad():
+            out = self.model(trigger_data.x, trigger_data.edge_index)
+            wm_preds = out[trigger_data.trigger_nodes].argmax(dim=1).cpu()
+        return wm_preds
 
     def _load_model(self):
         if self.model_path:
