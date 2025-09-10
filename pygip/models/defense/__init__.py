@@ -4,7 +4,9 @@ from .ImperceptibleWM2 import ImperceptibleWM2
 from .RandomWM import RandomWM
 from .SurviveWM import SurviveWM
 from .SurviveWM2 import SurviveWM2
+from .atom.ATOM import ATOM
 from .Integrity import QueryBasedVerificationDefense as IntegrityVerification
+from .Revisiting import Revisiting
 
 __all__ = [
     'BackdoorWM',
@@ -13,5 +15,7 @@ __all__ = [
     'RandomWM',
     'SurviveWM',
     'SurviveWM2',
-    'IntegrityVerification'
+    'ATOM',
+    'IntegrityVerification',
+    'Revisiting'
 ]
