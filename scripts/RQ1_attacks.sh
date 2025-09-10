@@ -3,13 +3,8 @@ set -euo pipefail
 
 GPU_ID="${1:-0}"
 
-
 DATASETS=("Cora" "Citeseer" "PubMed" "Amazon-Photo" "Proteins")
-
-
 ATTACKS=("mea0" "mea1" "mea2" "mea3" "mea4" "mea5" "advmea" "cega" "realistic" "dfea_i" "dfea_ii" "dfea_iii")
-
-
 BUDGETS=(0.25 0.5 1.0 2.0 4.0)
 REGIMES=("both" "x_only" "a_only" "data_free")
 SEEDS=(0 1 2)
@@ -18,7 +13,6 @@ CONF_DIR="configs"
 OUTDIR="outputs/RQ1"
 LEADER_DIR="outputs/leaderboards"
 mkdir -p "${CONF_DIR}" "${OUTDIR}" "${LEADER_DIR}"
-
 
 GRID_JSON="${CONF_DIR}/attack_grids_large.json"
 cat > "${GRID_JSON}" <<'JSON'
@@ -30,9 +24,7 @@ cat > "${GRID_JSON}" <<'JSON'
   "mea4": [ { "ctor": {}, "run": {} } ],
   "mea5": [ { "ctor": {}, "run": {} } ],
 
-  "advmea": [
-    { "ctor": {}, "run": {} }
-  ],
+  "advmea": [ { "ctor": {}, "run": {} } ],
 
   "cega": [
     { "ctor": {}, "run": {"epochs_per_cycle": 1, "LR_CEGA": 0.01, "setup": "experiment"} },
@@ -65,7 +57,7 @@ python run/run_attack_track.py \
   --device "cuda:${GPU_ID}" \
   --outdir "${OUTDIR}"
 
-echo "[RQ1] Select best configs per dataset/attack/budget/regime ..."
+echo "[RQ1] Select best configs ..."
 python run/select_best.py --rq1_dir "${OUTDIR}" --outdir "${LEADER_DIR}"
 
 echo "[RQ1] Export LaTeX tables ..."
