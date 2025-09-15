@@ -13,7 +13,7 @@ from torch_geometric.utils import to_networkx, from_networkx
 
 from .base import BaseDefense
 from pygip.models.nn import GCN
-from ...utils.metrics import DefenseCompMetric, DefenseMetric
+from pygip.utils.metrics import DefenseCompMetric, DefenseMetric
 
 
 class QueryBasedVerificationDefense(BaseDefense):
