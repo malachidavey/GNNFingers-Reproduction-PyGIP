@@ -1,7 +1,6 @@
 import os
-import time
-import math
 import random
+import time
 from typing import List, Tuple, Optional
 
 import dgl
@@ -79,7 +78,8 @@ def _safe_dir() -> str:
     return os.path.dirname(os.path.abspath(__file__))
 
 
-def load_attack2_generated_graph(dataset_name: str, default_nodes: int) -> Tuple[dgl.DGLGraph, torch.Tensor, Optional[List[int]]]:
+def load_attack2_generated_graph(dataset_name: str, default_nodes: int) -> Tuple[
+    dgl.DGLGraph, torch.Tensor, Optional[List[int]]]:
     """
     Try to load an attack-2 pre-generated graph. If files are missing, fall back to
     an on-the-fly Erdos–Rényi graph with random features. Returns (graph, features, selected_indices).
@@ -148,7 +148,7 @@ class _MEABase(BaseAttack):
         self.dataset = dataset
         self.graph: dgl.DGLGraph = dataset.graph_data.to(self.device)
         self.features: torch.Tensor = self.graph.ndata['feat']
-               self.labels: torch.Tensor = dataset.graph_data.ndata['label']
+        self.labels: torch.Tensor = dataset.graph_data.ndata['label']
         self.train_mask: torch.Tensor = dataset.graph_data.ndata['train_mask']
         self.test_mask: torch.Tensor = dataset.graph_data.ndata['test_mask']
 
@@ -380,7 +380,8 @@ class ModelExtractionAttack3(_MEABase):
         y_pseudo = y_pseudo_full[idx_train_t]
 
         # train on the shadow subgraph
-        surrogate, t_train = self._train_surrogate(sg, x_sg, torch.arange(sg.number_of_nodes(), device=self.device), y_pseudo)
+        surrogate, t_train = self._train_surrogate(sg, x_sg, torch.arange(sg.number_of_nodes(), device=self.device),
+                                                   y_pseudo)
         metric_comp.update(train_surrogate_time=t_train)
 
         self._compute_metrics(surrogate, metric, metric_comp)
@@ -418,7 +419,8 @@ class ModelExtractionAttack4(_MEABase):
 
         sg = subgraph_from_nodes(self.graph, idx_train)
         x_sg = self.features[idx_train_t]
-        surrogate, t_train = self._train_surrogate(sg, x_sg, torch.arange(sg.number_of_nodes(), device=self.device), y_pseudo[idx_train_t])
+        surrogate, t_train = self._train_surrogate(sg, x_sg, torch.arange(sg.number_of_nodes(), device=self.device),
+                                                   y_pseudo[idx_train_t])
         metric_comp.update(train_surrogate_time=t_train)
 
         self._compute_metrics(surrogate, metric, metric_comp)
@@ -470,7 +472,8 @@ class ModelExtractionAttack5(_MEABase):
 
         sg = subgraph_from_nodes(self.graph, idx_train)
         x_sg = self.features[idx_train_t]
-        surrogate, t_train = self._train_surrogate(sg, x_sg, torch.arange(sg.number_of_nodes(), device=self.device), y_pseudo[idx_train_t])
+        surrogate, t_train = self._train_surrogate(sg, x_sg, torch.arange(sg.number_of_nodes(), device=self.device),
+                                                   y_pseudo[idx_train_t])
         metric_comp.update(train_surrogate_time=t_train)
 
         self._compute_metrics(surrogate, metric, metric_comp)
