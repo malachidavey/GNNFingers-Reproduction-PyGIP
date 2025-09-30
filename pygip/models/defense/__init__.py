@@ -6,6 +6,8 @@ from .SurviveWM import SurviveWM
 from .SurviveWM2 import SurviveWM2
 from .atom.ATOM import ATOM
 from .Integrity import QueryBasedVerificationDefense as IntegrityVerification
+from .GrOVe import GroveDefense
+from .Revisiting import Revisiting
 
 __all__ = [
     'BackdoorWM',
@@ -14,5 +16,8 @@ __all__ = [
     'RandomWM',
     'SurviveWM',
     'SurviveWM2',
-    'ATOM'
+    'IntegrityVerification'
+    'GroveDefense'
+    'ATOM',
+    'Revisiting'
 ]
