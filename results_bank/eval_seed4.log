@@ -1,7 +1,0 @@
-Loaded 10 fingerprints  (F+: 6, F-: 4)
-Computing threshold from TRAIN set (mode=target_fpr)...
-Chosen threshold t* = 0.8000 (mode=target_fpr, TRAIN src, target_fpr=0.50)
-✅ ARUC/AUC = 0.6250 | ACC@t* = 0.6000 | AP = 0.8105
-    TPR@t* = 0.3333 | TNR@t* = 1.0000 | CM = [[4, 0], [4, 2]]
-Plots: results_bank/seed4_univerifier_eval_ru.png , results_bank/seed4_univerifier_eval_roc.png
-Curves saved to results_bank/seed4_univerifier_curves.npz

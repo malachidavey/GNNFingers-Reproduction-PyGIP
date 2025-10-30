@@ -18,3 +18,17 @@ dist/
 
 #virtual environments folder
 .venv
+__pycache__/
+*.pyc
+*.pt
+*.pth
+*.tgz
+*.tar.gz
+*.csv
+results_*/
+results*/
+runs/
+.logs/
+.env
+.venv
+.ipynb_checkpoints/

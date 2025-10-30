@@ -1,3 +1,0 @@
-pos_mode=ft_last
-seed=0
-best_acc=0.907500
