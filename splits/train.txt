@@ -1,0 +1,16 @@
+results_bank/proteins_gin_distillT2.0_s3.pt
+results_bank/enzymes_gin_ft-last_s0.pt
+results_bank/aids_gin_s9.pt
+results_bank/proteins_gin_prune20_s2.pt
+results_bank/enzymes_gin_distillT2.0_s3.pt
+results_bank/aids_gin_ft-last_s0.pt
+results_bank/proteins_gin_ft-last_s0.pt
+results_bank/proteins_gin_s8.pt
+results_bank/aids_gin_distillT2.0_s3.pt
+results_bank/enzymes_gin_prune20_s2.pt
+results_bank/enzymes_gin_s6.pt
+results_bank/enzymes_gin_s5.pt
+results_bank/aids_gin_s8.pt
+results_bank/enzymes_gin_ft-all_s1.pt
+results_bank/proteins_gin_s7.pt
+results_bank/aids_gin_prune20_s2.pt

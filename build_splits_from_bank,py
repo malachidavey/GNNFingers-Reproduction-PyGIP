@@ -1,0 +1,137 @@
+#!/usr/bin/env python3
+import os, sys, re, random
+from pathlib import Path
+
+try:
+    import torch
+except Exception as e:
+    print("ERROR: PyTorch not available in this env. Activate your PyGIP env.", file=sys.stderr)
+    sys.exit(1)
+
+BANK = Path("results_bank")
+OUT  = Path("splits")
+OUT.mkdir(exist_ok=True)
+
+SEEDS = [0,1,2,3,4]
+TRAIN_RATIO = 0.8
+TRAIN_NEG_MIN = 6   # tweak to 8–12 if AUC unstable
+
+def infer_label_from_obj(obj):
+    """
+    Return +1 for positive (F+), -1 for negative (F-), or None if unknown.
+    We try several common fields and fallbacks.
+    """
+    cand_keys = [
+        "label", "y", "target", "class", "is_positive", "is_pos", "pos",
+        "gt", "gt_label"
+    ]
+    # direct int/bool in root
+    if isinstance(obj, (int, bool)):
+        return +1 if obj in (1, True) else -1 if obj in (0, False) else None
+
+    # dict-like root
+    if isinstance(obj, dict):
+        # numeric/bool fields
+        for k in cand_keys:
+            if k in obj:
+                v = obj[k]
+                if isinstance(v, (int, bool)):
+                    return +1 if v in (1, True) else -1 if v in (0, False) else None
+                # tensor with scalar
+                try:
+                    import torch
+                    if isinstance(v, torch.Tensor) and v.numel()==1:
+                        sv = int(v.item())
+                        return +1 if sv==1 else -1 if sv==0 else None
+                except:
+                    pass
+                # string fallbacks
+                if isinstance(v, str):
+                    vl = v.lower()
+                    if "pos" in vl or "f+" in vl or "positive" in vl:
+                        return +1
+                    if "neg" in vl or "f-" in vl or "negative" in vl:
+                        return -1
+        # nested dict(s)
+        for k,v in obj.items():
+            if isinstance(v, dict):
+                lab = infer_label_from_obj(v)
+                if lab is not None:
+                    return lab
+
+    # tuple/list with a dict somewhere
+    if isinstance(obj, (list, tuple)):
+        for v in obj:
+            lab = infer_label_from_obj(v)
+            if lab is not None:
+                return lab
+
+    return None
+
+def detect_label_from_filename(p: Path):
+    name = p.name.lower()
+    if re.search(r"(pos|f\+|fplus|\bpositive\b)", name):
+        return +1
+    if re.search(r"(neg|f\-|fminus|\bnegative\b)", name):
+        return -1
+    return None
+
+def collect_items():
+    pos, neg, unknown = [], [], []
+    pts = sorted(BANK.glob("*.pt"))
+    if not pts:
+        print("ERROR: No .pt files found in results_bank/", file=sys.stderr)
+        sys.exit(2)
+
+    for p in pts:
+        lab = detect_label_from_filename(p)
+        if lab is None:
+            # try loading
+            try:
+                obj = torch.load(str(p), map_location="cpu")
+                lab = infer_label_from_obj(obj)
+            except Exception as e:
+                lab = None
+        if lab == +1:
+            pos.append(str(p))
+        elif lab == -1:
+            neg.append(str(p))
+        else:
+            unknown.append(str(p))
+
+    return pos, neg, unknown
+
+def stratified_split(P, N, seed):
+    rng = random.Random(seed)
+    P = P[:] ; N = N[:]
+    rng.shuffle(P); rng.shuffle(N)
+
+    p_train = int(round(len(P)*TRAIN_RATIO))
+    n_train = max(int(round(len(N)*TRAIN_RATIO)), min(len(N), TRAIN_NEG_MIN))
+
+    train = P[:p_train] + N[:n_train]
+    test  = P[p_train:] + N[n_train:]
+    rng.shuffle(train); rng.shuffle(test)
+    return train, test
+
+def main():
+    pos, neg, unk = collect_items()
+    print(f"Detected: POS={len(pos)}  NEG={len(neg)}  UNKNOWN={len(unk)}")
+    if unk:
+        print(f"Note: {len(unk)} files unlabeled and excluded (first 5 shown):")
+        for x in unk[:5]:
+            print("  ?", x)
+
+    if len(pos)==0 or len(neg)==0:
+        print("ERROR: Need both positives and negatives. Rename files (pos/neg) or store a label field in .pt.", file=sys.stderr)
+        sys.exit(3)
+
+    for seed in SEEDS:
+        tr, te = stratified_split(pos, neg, seed)
+        (OUT/f"train_{seed}.txt").write_text("\n".join(tr)+"\n")
+        (OUT/f"test_{seed}.txt").write_text("\n".join(te)+"\n")
+        print(f"[seed {seed}] train={len(tr)}  test={len(te)}  (neg min in train={TRAIN_NEG_MIN})")
+
+if __name__ == "__main__":
+    main()
+

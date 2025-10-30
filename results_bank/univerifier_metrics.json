@@ -1,0 +1,5 @@
+{
+  "best_val_acc": 0.8333333333333334,
+  "input_dim": 8192,
+  "zscore": true
+}

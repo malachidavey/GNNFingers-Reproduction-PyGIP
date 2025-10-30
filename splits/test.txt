@@ -1,0 +1,3 @@
+results_bank/aids_gin_ft-all_s1.pt
+results_bank/univerifier_best.pt
+results_bank/proteins_gin_ft-all_s1.pt

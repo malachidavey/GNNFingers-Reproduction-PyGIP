@@ -1,0 +1,8 @@
+enzymes_gin_s5.pt
+aids_gin_ft-last_s0.pt
+enzymes_gin_s6.pt
+enzymes_gin_ft-all_s1.pt
+aids_gin_ft-all_s1.pt
+enzymes_gin_ft-last_s0.pt
+proteins_gin_ft-last_s0.pt
+proteins_gin_ft-all_s1.pt

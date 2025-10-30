@@ -1,0 +1,5 @@
+pos_mode=distill
+T=2.0
+alpha=0.7
+seed=3
+best_acc=0.636771

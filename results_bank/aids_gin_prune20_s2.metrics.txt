@@ -1,0 +1,3 @@
+pos_mode=prune
+seed=2
+best_acc=0.995000
