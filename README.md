@@ -131,3 +131,18 @@ tar -czf results_summary.tgz results_summary
 ## License / Attribution
 
 This repo contains my reproducibility notes and glue instructions. Please refer to the upstream **PyGIP** project for implementation details and cite the original authors/paper.
+
+---
+
+## Data Layout Note
+
+Fingerprints and metrics are **not tracked in Git**.  
+To reproduce locally, create the following layout:
+
+results_bank/
+├── *.pt # fingerprint tensors
+├── *.metrics.txt # matching metrics
+├── univerifier_eval_ru.png
+├── univerifier_eval_roc.png
+└── univerifier_curves.npz
+Ensure `train.txt` and `test.txt` list the correct relative paths.
