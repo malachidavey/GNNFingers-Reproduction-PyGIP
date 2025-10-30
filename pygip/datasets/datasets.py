@@ -22,7 +22,9 @@ from torch_geometric.datasets import LastFMAsia
 from torch_geometric.datasets import Planetoid  # Cora, CiteSeer, PubMed
 from torch_geometric.datasets import PolBlogs as PolBlogsPyG
 from torch_geometric.datasets import Reddit
-from torch_geometric.datasets import TUDataset  # ENZYMES
+from torch_geometric.datasets import TUDataset  #ENZYMES
+from torch_geometric.datasets import GEDDataset
+from torch_geometric.transforms import NormalizeFeatures
 
 
 def dgl_to_tg(dgl_graph):
@@ -401,7 +403,26 @@ class ENZYMES(Dataset):
         super().__init__(api_type, path)
 
     def load_pyg_data(self):
-        dataset = TUDataset(root=self.path, name='ENZYMES')
+        dataset = TUDataset(root=self.path, name='ENZYMES', use_node_attr=True)
+                # Make base class happy:
+        self.graph_dataset = dataset
+        self.graph_data = dataset[0]
+
+        # Provide attributes the base _load_meta_data() expects.
+        if not hasattr(self.graph_dataset, 'num_node_features'):
+            if hasattr(dataset, 'num_features'):
+                self.graph_dataset.num_node_features = int(dataset.num_features)
+            elif hasattr(self.graph_data, 'num_features'):
+                self.graph_dataset.num_node_features = int(self.graph_data.num_features)
+            elif getattr(self.graph_data, 'x', None) is not None:
+                self.graph_dataset.num_node_features = int(self.graph_data.x.size(-1))
+            else:
+                self.graph_dataset.num_node_features = 0
+
+        if not hasattr(self.graph_dataset, 'num_classes'):
+            labels = torch.tensor([int(d.y) for d in dataset])
+            self.graph_dataset.num_classes = int(labels.max().item()) + 1
+
         data_list = [data for data in dataset]
         all_x = torch.cat([d.x for d in data_list], dim=0)
         mean, std = all_x.mean(0), all_x.std(0)
@@ -533,6 +554,71 @@ class PROTEINS(Dataset):
         graph, _ = zip(*[dataset[i] for i in range(16)])
         self.graph_dataset = dataset
         self.graph_data = dgl.batch(graph)
+    
+    def load_pyg_data(self):
+        dataset = TUDataset(root=self.path, name='PROTEINS', use_node_attr=True)
+        self.graph_dataset = dataset
+        self.graph_data = dataset[0]
+
+        if not hasattr(self.graph_dataset, 'num_node_features'):
+            if hasattr(dataset, 'num_features') and dataset.num_features is not None:
+                self.graph_dataset.num_node_features = int(dataset.num_features)
+            elif getattr(self.graph_data, 'x', None) is not None:
+                self.graph_dataset.num_node_features = int(self.graph_data.x.size(-1))
+            else:
+                self.graph_dataset.num_node_features = 0
+
+        if not hasattr(self.graph_dataset, 'num_classes'):
+            labels = torch.tensor([int(d.y) for d in dataset])
+            self.graph_dataset.num_classes = int(labels.max().item()) + 1
+
+        data_list = [d for d in dataset]
+        if getattr(data_list[0], "x", None) is not None:
+            all_x = torch.cat([d.x for d in data_list], dim=0)
+            mean, std = all_x.mean(0), all_x.std(0) + 1e-6
+            for d in data_list:
+                d.x = (d.x - mean) / std
+
+        all_labels = np.array([int(d.y) for d in data_list])
+        splitter = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+        train_idx, test_idx = next(splitter.split(np.zeros(len(all_labels)), all_labels))
+        self.train_data = [data_list[i] for i in train_idx]
+        self.test_data  = [data_list[i] for i in test_idx]
+
+
+class AIDS(Dataset):
+    def __init__(self, api_type='pyg', path='./data'):
+        super().__init__(api_type, path)
+
+    def load_pyg_data(self):
+        dataset = TUDataset(root=self.path, name='AIDS', use_node_attr=True)
+        self.graph_dataset = dataset
+        self.graph_data = dataset[0]
+
+        if not hasattr(self.graph_dataset, 'num_node_features'):
+            if hasattr(dataset, 'num_features') and dataset.num_features is not None:
+                self.graph_dataset.num_node_features = int(dataset.num_features)
+            elif getattr(self.graph_data, 'x', None) is not None:
+                self.graph_dataset.num_node_features = int(self.graph_data.x.size(-1))
+            else:
+                self.graph_dataset.num_node_features = 0
+
+        if not hasattr(self.graph_dataset, 'num_classes'):
+            labels = torch.tensor([int(d.y) for d in dataset])
+            self.graph_dataset.num_classes = int(labels.max().item()) + 1
+
+        data_list = [d for d in dataset]
+        if getattr(data_list[0], "x", None) is not None:
+            all_x = torch.cat([d.x for d in data_list], dim=0)
+            mean, std = all_x.mean(0), all_x.std(0) + 1e-6
+            for d in data_list:
+                d.x = (d.x - mean) / std
+
+        all_labels = np.array([int(d.y) for d in data_list])
+        splitter = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+        train_idx, test_idx = next(splitter.split(np.zeros(len(all_labels)), all_labels))
+        self.train_data = [data_list[i] for i in train_idx]
+        self.test_data  = [data_list[i] for i in test_idx]
 
 
 class Collab(Dataset):
