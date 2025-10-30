@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+title: "GNNFingers Reproduction (PyGIP)"
+message: "If you use this repository, please cite it as below."
+authors:
+  - family-names: Davey
+    given-names: Malachi
+repository-code: "https://github.com/malachidavey/GNNFingers-Reproduction-PyGIP"
+license: BSD-2-Clause
+version: "v0.1"
+date-released: "2025-10-30"
+preferred-citation:
+  type: article
+  authors:
+    - family-names: You
+      given-names: Xiaoyu
+    - family-names: Jiang
+      given-names: Youhe
+    - family-names: Xu
+      given-names: Jianwei
+    - family-names: Zhang
+      given-names: Mi
+    - family-names: Yang
+      given-names: Min
+  title: "GNNFingers: A Fingerprinting Framework for Verifying Ownerships of Graph Neural Networks"
+  year: 2024
+  collection-title: "Proceedings of the ACM Web Conference 2024"
