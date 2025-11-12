@@ -1,0 +1,21 @@
+name: pygip
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      - torch==2.1.0
+      - torchvision==0.16.0
+      - torchdata==0.7.0
+      - dgl==1.1.1
+      - numpy<2.0
+      - scipy
+      - scikit-learn
+      - tqdm
+      - networkx
+      - matplotlib
+      - pandas
+      - pyyaml
+
