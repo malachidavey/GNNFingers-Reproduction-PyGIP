@@ -1,34 +1,32 @@
-# Byte-compiled / optimized / DLL files
+# Python
 __pycache__/
 *.py[cod]
-*$py.class
-
-# build
-PyGIP.egg-info/
-dist/
-
-# IDEs
-.vscode/
-.idea/
+.ipynb_checkpoints/
 
 # OS
 .DS_Store
-.AppleDouble
-.LSOverride
 
-#virtual environments folder
-.venv
-__pycache__/
-*.pyc
+# Builds / packaging
+build/
+dist/
+*.egg-info/
+PyGIP.egg-info/
+
+# Data / checkpoints / outputs
+data/
+checkpoints*/
+dgl_checkpoints/
+results*/
+*.tgz
+*.log
+logs/
+runs/
+wandb/
+mlruns/
+
+# Large ML artifacts
 *.pt
 *.pth
-*.tgz
-*.tar.gz
-*.csv
-results_*/
-results*/
-runs/
-.logs/
-.env
-.venv
-.ipynb_checkpoints/
+*.ckpt
+*.pkl
+*.npz
